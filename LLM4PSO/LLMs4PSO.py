@@ -9,10 +9,14 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 try:
+    from .actions import StrategyToolbox
+    from .controller import RuleBasedReActController
     from .PSO import PSO
     from .feature import Feature
     from .state import SwarmStateAnalyzer
 except ImportError:
+    from actions import StrategyToolbox
+    from controller import RuleBasedReActController
     from PSO import PSO
     from feature import Feature
     from state import SwarmStateAnalyzer
@@ -37,6 +41,7 @@ class LLM4PSO:
         velocity_bounds,
         stagnation_threshold=200,
         improvement_tolerance=1e-3,
+        intervention_mode="rule",
     ):
         self.dim = dim
         self.flag = flag
@@ -51,9 +56,11 @@ class LLM4PSO:
         self.w = w
         self.Global_best = []
         self.state_history = []
+        self.action_history = []
         self.stagnation_counter = 0
         self.stagnation_threshold = int(stagnation_threshold)
         self.improvement_tolerance = float(improvement_tolerance)
+        self.intervention_mode = intervention_mode
         self.stagnation = False
         self.feat = Feature()
         self.feat.getAllFuncName()
@@ -65,6 +72,8 @@ class LLM4PSO:
             improvement_tolerance=self.improvement_tolerance,
             stagnation_window=min(max(5, self.stagnation_threshold // 2), max(5, self.stagnation_threshold)),
         )
+        self.toolbox = StrategyToolbox(position_bounds, velocity_bounds, dim)
+        self.controller = RuleBasedReActController()
 
     def run(self):
         pso = PSO(
@@ -88,20 +97,10 @@ class LLM4PSO:
             state = self.state_analyzer.analyze(pso, i, self.Global_best, self.stagnation_counter)
             self.state_history.append(state)
 
-            if self._should_call_llm(state):
-                print(
-                    f"--- Iteration[{i}]: {state.state_label}; "
-                    f"calling LLM heuristic controller ---"
-                )
-                pos, vel = self.reduce_particles_by_cosine_similarity(
-                    pso,
-                    max_particles=max(1, self.n_pop // 2),
-                )
-                suggested_w = self.generate_heuristic(pos, vel, pso.get_gBest(), state)
-                if suggested_w is not None:
-                    self.w = suggested_w
-                self.stagnation = self.execute_heuristic(pso)
-                self.stagnation_counter = 0
+            if self._should_intervene(state):
+                self.stagnation = self._apply_intervention(pso, state, i)
+                if self.stagnation:
+                    self.stagnation_counter = 0
 
             if self.stagnation:
                 pso.evaluation(self.flag)
@@ -127,6 +126,51 @@ class LLM4PSO:
             self.stagnation = False
 
         return np.array(self.Global_best)
+
+    def _apply_intervention(self, pso, state, iteration):
+        if self.intervention_mode == "llm":
+            print(
+                f"--- Iteration[{iteration}]: {state.state_label}; "
+                f"calling LLM heuristic controller ---"
+            )
+            pos, vel = self.reduce_particles_by_cosine_similarity(
+                pso,
+                max_particles=max(1, self.n_pop // 2),
+            )
+            suggested_w = self.generate_heuristic(pos, vel, pso.get_gBest(), state)
+            if suggested_w is not None:
+                self.w = suggested_w
+            applied = self.execute_heuristic(pso)
+            self.action_history.append(
+                {
+                    "iteration": iteration,
+                    "mode": "llm",
+                    "state": state.to_prompt_dict(),
+                    "applied": applied,
+                    "inertia_weight": suggested_w,
+                }
+            )
+            return applied
+
+        decision = self.controller.decide(state)
+        result = self.toolbox.apply(pso, decision.action, decision.params)
+        if result.inertia_weight is not None:
+            self.w = result.inertia_weight
+        self.action_history.append(
+            {
+                "iteration": iteration,
+                "mode": "rule",
+                "state": state.to_prompt_dict(),
+                "decision": decision.to_dict(),
+                "result": result.to_dict(),
+            }
+        )
+        if result.applied:
+            print(
+                f"--- Iteration[{iteration}]: {state.state_label}; "
+                f"{decision.action}; {result.summary} ---"
+            )
+        return result.applied
 
     def generate_heuristic(self, pos, vel, gbest, state=None):
         state_summary = {}
@@ -335,7 +379,7 @@ class LLM4PSO:
         else:
             self.stagnation_counter = 0
 
-    def _should_call_llm(self, state):
+    def _should_intervene(self, state):
         return state.no_improve_iters >= self.stagnation_threshold
 
     def _function_description(self):
