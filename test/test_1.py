@@ -10,8 +10,8 @@ from LLM4PSO.LLMs4PSO import LLM4PSO
 from LLM4PSO.actions import StrategyToolbox
 from LLM4PSO.controller import RuleBasedReActController
 from LLM4PSO.state import SwarmStateAnalyzer
-from my_pso.Pso import PSO
-from my_pso.function import Func
+from LLM4PSO.compare.my_pso.Pso import PSO
+from LLM4PSO.compare.my_pso.function import Func
 
 
 def test_llm4pso_run_sphere_without_llm_call():

@@ -11,12 +11,16 @@ from matplotlib import pyplot as plt
 try:
     from .actions import StrategyToolbox
     from .controller import RuleBasedReActController
+    from .llm_react import LLMReActController
+    from .react_deep import DeepReActController
     from .PSO import PSO
     from .feature import Feature
     from .state import SwarmStateAnalyzer
 except ImportError:
     from actions import StrategyToolbox
     from controller import RuleBasedReActController
+    from llm_react import LLMReActController
+    from react_deep import DeepReActController
     from PSO import PSO
     from feature import Feature
     from state import SwarmStateAnalyzer
@@ -42,6 +46,7 @@ class LLM4PSO:
         stagnation_threshold=200,
         improvement_tolerance=1e-3,
         intervention_mode="rule",
+        react_mode="basic",
     ):
         self.dim = dim
         self.flag = flag
@@ -61,6 +66,7 @@ class LLM4PSO:
         self.stagnation_threshold = int(stagnation_threshold)
         self.improvement_tolerance = float(improvement_tolerance)
         self.intervention_mode = intervention_mode
+        self.react_mode = react_mode
         self.stagnation = False
         self.feat = Feature()
         self.feat.getAllFuncName()
@@ -74,6 +80,52 @@ class LLM4PSO:
         )
         self.toolbox = StrategyToolbox(position_bounds, velocity_bounds, dim)
         self.controller = RuleBasedReActController()
+        self._react_controller = None
+        if intervention_mode == "llm_react":
+            self._init_react_controller()
+
+    def _init_react_controller(self):
+        llm = None
+        try:
+            from llms.factory import create_llm
+            llm = create_llm("deepseek")
+        except Exception:
+            pass
+        if llm is None:
+            try:
+                from llms.LLM import DeepSeek
+                llm = DeepSeek()
+            except Exception:
+                pass
+
+        # Get landscape prior from Feature
+        landscape_prior = "unknown"
+        try:
+            func_key = getattr(self.func, "__name__", None)
+            if func_key:
+                landscape_prior = self.feat.get_landscape_prior(func_key)
+        except Exception:
+            pass
+
+        if self.react_mode == "deep":
+            self._react_controller = DeepReActController(
+                llm=llm,
+                toolbox=self.toolbox,
+                max_turns=3,
+                function_description=self.func_name,
+                dim=self.dim,
+                landscape_prior=landscape_prior,
+                verbose=True,
+            )
+        else:
+            self._react_controller = LLMReActController(
+                llm=llm,
+                toolbox=self.toolbox,
+                max_turns=3,
+                function_description=self.func_name,
+                dim=self.dim,
+                verbose=True,
+            )
 
     def run(self):
         pso = PSO(
@@ -99,8 +151,7 @@ class LLM4PSO:
 
             if self._should_intervene(state):
                 self.stagnation = self._apply_intervention(pso, state, i)
-                if self.stagnation:
-                    self.stagnation_counter = 0
+                self.stagnation_counter = 0  # reset after any intervention attempt (including "none")
 
             if self.stagnation:
                 pso.evaluation(self.flag)
@@ -151,6 +202,36 @@ class LLM4PSO:
                 }
             )
             return applied
+
+        if self.intervention_mode == "llm_react" and self._react_controller is not None:
+            print(
+                f"--- Iteration[{iteration}]: {state.state_label}; "
+                f"calling LLM ReAct controller ---"
+            )
+            react_result = self._react_controller.decide_and_act(pso, state, iteration, self.Global_best, flag=self.flag)
+            if react_result.final_inertia_weight is not None:
+                self.w = react_result.final_inertia_weight
+            self.action_history.append(
+                {
+                    "iteration": iteration,
+                    "mode": "llm_react",
+                    "state": state.to_prompt_dict(),
+                    "turns": [
+                        {
+                            "turn": t.turn,
+                            "thought": t.thought,
+                            "action": t.action,
+                            "params": t.params,
+                            "observation": t.observation,
+                            "improvement": t.improvement,
+                            "done": t.done,
+                        }
+                        for t in react_result.turns
+                    ],
+                    "applied": react_result.applied,
+                }
+            )
+            return react_result.applied
 
         decision = self.controller.decide(state)
         result = self.toolbox.apply(pso, decision.action, decision.params)

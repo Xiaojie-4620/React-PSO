@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python experiments/ablation.py)",
+      "Bash(python -c \"from dotenv import load_dotenv; print\\('dotenv available'\\)\")",
+      "Bash(pip install *)",
+      "Bash(python -c ' *)",
+      "Bash(python experiments/run_react_experiment.py --func sphere --dim 5 --mode rule --max-iter 100 --stagnation-threshold 20)",
+      "Bash(python experiments/run_react_experiment.py --func rastrigin --dim 5 --mode llm_react --provider deepseek --max-iter 150 --stagnation-threshold 15 --pop-size 20)",
+      "Bash(where python *)",
+      "Bash(conda activate *)",
+      "Bash(python -c \"import openai; print\\('openai version:', openai.__version__\\)\")",
+      "Read(//d/anaconda/envs/l4llm/**)",
+      "Read(//d/anaconda/envs/**)",
+      "Bash(D:/anaconda/envs/l4llm/python.exe experiments/run_react_experiment.py --func rastrigin --dim 5 --mode llm_react --provider deepseek --max-iter 150 --stagnation-threshold 15 --pop-size 20)",
+      "Bash(D:/anaconda/envs/l4llm/python.exe experiments/run_react_experiment.py --func rastrigin --dim 5 --mode rule --max-iter 150 --stagnation-threshold 15 --pop-size 20)",
+      "Bash(D:/anaconda/envs/l4llm/python.exe experiments/run_react_experiment.py --func rastrigin --dim 5 --mode llm_react --react-mode deep --provider deepseek --max-iter 150 --stagnation-threshold 15 --pop-size 20 --output experiments/results/deep_react_rastrigin_d5.json)",
+      "Bash(D:/anaconda/envs/l4llm/python.exe -c ' *)",
+      "Bash(D:/anaconda/envs/l4llm/python.exe test/test_experiments.py --mode quick --dim 5 --trials 2 --functions sphere)",
+      "Bash(D:/anaconda/envs/l4llm/python.exe test/test_experiments.py --mode sota --dim 10 --trials 5 --functions sphere rastrigin ackley)",
+      "Bash(python test/run_full_experiments.py --mode quick)"
+    ]
+  }
+}

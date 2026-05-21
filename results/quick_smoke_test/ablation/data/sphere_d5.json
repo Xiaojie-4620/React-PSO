@@ -1,0 +1,34 @@
+{
+  "none": {
+    "mean": 1.7896894178615898e-112,
+    "std": 2.5310030471754696e-112,
+    "median": 1.7896894178615898e-112,
+    "best": 3.2024397028859585e-136,
+    "worst": 3.5793788357231795e-112,
+    "n_valid": 2
+  },
+  "rule": {
+    "mean": 1.7896894178615898e-112,
+    "std": 2.5310030471754696e-112,
+    "median": 1.7896894178615898e-112,
+    "best": 3.2024397028859585e-136,
+    "worst": 3.5793788357231795e-112,
+    "n_valid": 2
+  },
+  "llm_react": {
+    "mean": Infinity,
+    "std": 0.0,
+    "median": Infinity,
+    "best": Infinity,
+    "worst": Infinity,
+    "n_valid": 0
+  },
+  "llm_react_deep": {
+    "mean": Infinity,
+    "std": 0.0,
+    "median": Infinity,
+    "best": Infinity,
+    "worst": Infinity,
+    "n_valid": 0
+  }
+}

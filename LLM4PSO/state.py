@@ -64,7 +64,7 @@ class SwarmStateAnalyzer:
         self.boundary_epsilon = np.maximum(self.search_span * boundary_epsilon_ratio, 1e-12)
         self.velocity_epsilon = np.maximum(self.velocity_span * boundary_epsilon_ratio, 1e-12)
 
-    def analyze(self, pso, iteration: int, history: Sequence[float], no_improve_iters: int) -> SwarmState:
+    def analyze(self, pso, iteration: int, history: Sequence[float], no_improve_iters: int, landscape=None) -> SwarmState:
         position = np.asarray(pso.position, dtype=float)
         velocity = np.asarray(pso.velocity, dtype=float)
         cost = np.asarray(pso.cost, dtype=float)
@@ -111,6 +111,7 @@ class SwarmStateAnalyzer:
             velocity_clip_ratio=velocity_clip_ratio,
             relative_improvement=relative_improvement,
             fitness_cv=fitness_cv,
+            landscape=landscape,
         )
 
         return SwarmState(
@@ -170,6 +171,7 @@ class SwarmStateAnalyzer:
         velocity_clip_ratio: float,
         relative_improvement: float,
         fitness_cv: float,
+        landscape=None,
     ) -> Tuple[str, List[str]]:
         reasons: List[str] = []
         stalled = no_improve_iters >= self.stagnation_window
@@ -187,6 +189,16 @@ class SwarmStateAnalyzer:
         if velocity_direction_consistency >= 0.85:
             reasons.append("particle velocities are highly aligned")
 
+        # --- Landscape-aware classification (takes priority when available) ---
+        if landscape is not None and stalled:
+            label = self._classify_with_landscape(
+                stalled, normalized_diversity, velocity_zero_ratio,
+                boundary_hit_ratio, fitness_cv, landscape, reasons,
+            )
+            if label is not None:
+                return label, reasons
+
+        # --- Standard statistical classification ---
         if stalled and boundary_hit_ratio >= 0.15:
             return "boundary_stagnation", reasons
         if stalled and normalized_diversity <= self.diversity_low_ratio and velocity_zero_ratio >= 0.5:
@@ -203,3 +215,40 @@ class SwarmStateAnalyzer:
         if normalized_diversity <= self.diversity_low_ratio:
             return "normal_convergence", reasons
         return "normal_search", reasons
+
+    def _classify_with_landscape(
+        self, stalled, normalized_diversity, velocity_zero_ratio,
+        boundary_hit_ratio, fitness_cv, landscape, reasons,
+    ) -> Optional[str]:
+        """Landscape-aware fine-grained classification.
+
+        Uses LandscapeProfile features to distinguish cases that look similar
+        statistically but require different interventions.
+        """
+        lp = landscape
+
+        # Rugged plateau: high ruggedness, low gradient, stalled
+        if lp.ruggedness > 0.6 and lp.gradient_magnitude_mean < 0.1 and stalled:
+            reasons.append(f"rugged plateau detected (ruggedness={lp.ruggedness:.3f})")
+            return "rugged_plateau_trap"
+
+        # Deceptive basin: high deceptiveness, convergence
+        if lp.deceptiveness > 0.5 and normalized_diversity <= self.diversity_low_ratio:
+            reasons.append(f"deceptive basin (deceptiveness={lp.deceptiveness:.3f})")
+            return "deceptive_basin"
+
+        # Deep valley: low ruggedness, high gradient, improving
+        if lp.ruggedness < 0.3 and lp.gradient_magnitude_mean > 0.2 and not stalled:
+            reasons.append("deep valley with informative gradients")
+            return "deep_valley_chase"
+
+        # Needle in haystack: high info content, low diversity, stalled
+        if (
+            lp.information_content > 0.6
+            and normalized_diversity <= self.diversity_low_ratio
+            and stalled
+        ):
+            reasons.append(f"needle-in-haystack landscape (IC={lp.information_content:.3f})")
+            return "needle_in_haystack"
+
+        return None

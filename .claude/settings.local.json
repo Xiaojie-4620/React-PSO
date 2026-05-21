@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python test/test_phase1.py)",
+      "Bash(python test/test_1.py)",
+      "Bash(python test/test_phase23.py)",
+      "Bash(python test/test_phase45.py)"
+    ]
+  }
+}

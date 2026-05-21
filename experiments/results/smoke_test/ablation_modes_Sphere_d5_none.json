@@ -1,0 +1,39 @@
+{
+  "config_name": "ablation_modes",
+  "func_name": "Sphere",
+  "dim": 5,
+  "mode": "none",
+  "n_trials": 2,
+  "statistics": {
+    "final_mean": 1.8873012942999963e-12,
+    "final_std": 2.298448061851786e-12,
+    "final_median": 1.8873012942999963e-12,
+    "final_best": 2.620530835595212e-13,
+    "final_worst": 3.5125495050404716e-12,
+    "avg_interventions": 16.5,
+    "avg_llm_calls": 0.0,
+    "avg_wall_time": 0.13145339488983154
+  },
+  "trials": [
+    {
+      "trial": 0,
+      "seed": 1041042977,
+      "final_cost": 2.620530835595212e-13,
+      "n_interventions": 16,
+      "n_llm_calls": 0,
+      "wall_time": 0.12856817245483398,
+      "success": true,
+      "error": null
+    },
+    {
+      "trial": 1,
+      "seed": 1041043986,
+      "final_cost": 3.5125495050404716e-12,
+      "n_interventions": 17,
+      "n_llm_calls": 0,
+      "wall_time": 0.1343386173248291,
+      "success": true,
+      "error": null
+    }
+  ]
+}
