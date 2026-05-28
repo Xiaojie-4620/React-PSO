@@ -130,27 +130,70 @@ class LLMReActController:
                 "parameters": {},
             },
             {
-                "name": "generate_custom_heuristic",
+                "name": "basin_hopping",
                 "description": (
-                    "Generate custom Python code for a heuristic escape function when none of "
-                    "the pre-built tools are suitable. The generated function receives "
-                    "(position, velocity) arrays and returns (new_position, new_velocity, optional_inertia). "
-                    "Use ONLY as a last resort when the standard tools cannot address the situation. "
-                    "The code must use only numpy, must be deterministic except for numpy random calls, "
-                    "and must not perform I/O."
+                    "Hop selected particles to random positions within an estimated basin radius from gBest. "
+                    "More targeted than levy_flight — uses estimated basin size to jump to neighboring basins. "
+                    "Best for multimodal traps where the basin structure is known from landscape analysis."
                 ),
                 "parameters": {
-                    "code_description": {"type": "str", "description": "Detailed English description of what the generated code should do"},
+                    "ratio": {"type": "float", "description": "Fraction of particles to hop (0.0-1.0)", "default": 0.25},
+                    "basin_radius": {"type": "float", "description": "Estimated basin radius for hopping distance", "default": 1.0},
+                    "target": {"type": "str", "description": "Which particles to target: 'worst', 'best', or 'random'", "default": "worst"},
+                    "inertia_weight": {"type": "float", "description": "New inertia weight after intervention (0.0-2.0)", "default": 1.0},
+                },
+            },
+            {
+                "name": "gradient_descent_step",
+                "description": (
+                    "Move selected particles along estimated local gradient direction (downhill). "
+                    "Only useful when gradient information is reliable (low ruggedness). "
+                    "Best for smooth valleys where direct descent can accelerate convergence."
+                ),
+                "parameters": {
+                    "ratio": {"type": "float", "description": "Fraction of particles to move (0.0-1.0)", "default": 0.20},
+                    "step_size": {"type": "float", "description": "Step size relative to search span (0.001-1.0)", "default": 0.1},
+                    "target": {"type": "str", "description": "Which particles to target: 'worst', 'best', or 'random'", "default": "worst"},
+                    "inertia_weight": {"type": "float", "description": "New inertia weight after intervention (0.0-2.0)", "default": 0.8},
+                },
+            },
+            {
+                "name": "landscape_adaptive_mutation",
+                "description": (
+                    "Gaussian mutation whose noise scale adapts to landscape ruggedness. "
+                    "Higher ruggedness -> larger mutations to cross rough terrain. "
+                    "Lower ruggedness -> smaller, more precise local search. "
+                    "Best for rugged plateaus where standard gaussian_mutation is poorly calibrated."
+                ),
+                "parameters": {
+                    "ratio": {"type": "float", "description": "Fraction of particles to mutate (0.0-1.0)", "default": 0.20},
+                    "ruggedness": {"type": "float", "description": "Landscape ruggedness estimate (0.0-1.0). Higher = rougher.", "default": 0.5},
+                    "target": {"type": "str", "description": "Which particles to target: 'worst', 'best', or 'random'", "default": "worst"},
+                    "inertia_weight": {"type": "float", "description": "New inertia weight after intervention (0.0-2.0)", "default": None},
+                },
+            },
+            {
+                "name": "landscape_adaptive_restart",
+                "description": (
+                    "Restart particles within a region whose size adapts inversely to the estimated basin radius. "
+                    "Small basin -> wider restart to escape. Large basin -> tighter restart to stay in promising region. "
+                    "Best for needle-in-haystack landscapes where targeted restarts beat random reinit."
+                ),
+                "parameters": {
+                    "ratio": {"type": "float", "description": "Fraction of particles to restart (0.0-1.0)", "default": 0.25},
+                    "basin_radius": {"type": "float", "description": "Estimated basin radius for inverse scaling of restart region", "default": 1.0},
+                    "reset_velocity": {"type": "bool", "description": "Whether to also randomize velocities", "default": True},
+                    "inertia_weight": {"type": "float", "description": "New inertia weight after intervention (0.0-2.0)", "default": 1.05},
                 },
             },
         ]
 
-    def decide_and_act(self, pso, state, iteration: int, gbest_history: List[float], flag: str = "normal") -> ReActResult:
+    def decide_and_act(self, pso, state, iteration: int, gbest_history: List[float], flag: str = "normal", landscape=None) -> ReActResult:
         """Run the ReAct loop for a single intervention episode.
 
         Returns a ReActResult with all turns and whether any action was applied.
         """
-        messages = self._build_initial_messages(state, iteration)
+        messages = self._build_initial_messages(state, iteration, landscape=landscape)
         result = ReActResult(applied=False)
         gbest_before = float(pso.get_gBest())
 
@@ -203,12 +246,17 @@ class LLMReActController:
                 break
 
             messages.append({"role": "assistant", "content": response_text})
-            messages.append({"role": "user", "content": f"Observation: {observation}\n\nBased on this result, what should we do next? Respond with the same JSON format."})
+            messages.append({"role": "user", "content": (
+                f"Observation: {observation}\n\n"
+                f"Analyze what this outcome tells you. Was your previous action effective? "
+                f"What is the current best strategy? Respond with JSON: "
+                f"{{\"thought\": \"<your analysis and reasoning>\", \"action\": \"<tool_name>\", \"params\": {{...}}, \"done\": false}}"
+            )})
             gbest_before = gbest_after
 
         return result
 
-    def _build_initial_messages(self, state, iteration: int) -> List[Dict[str, str]]:
+    def _build_initial_messages(self, state, iteration: int, landscape=None) -> List[Dict[str, str]]:
         state_json = json.dumps(state.to_prompt_dict(), ensure_ascii=True, indent=2)
         tools_json = json.dumps(self.tool_definitions, ensure_ascii=True, indent=2)
 
@@ -228,9 +276,24 @@ class LLMReActController:
             memory_context=memory_context or "No prior experience available.",
         )
 
+        # Include landscape profile if available
+        landscape_block = ""
+        if landscape is not None:
+            try:
+                lp_dict = landscape.to_dict() if hasattr(landscape, 'to_dict') else vars(landscape)
+                lp_json = json.dumps(lp_dict, ensure_ascii=True, indent=2)
+                landscape_block = (
+                    f"\n\n## Online Landscape Analysis (current search region)\n"
+                    f"```json\n{lp_json}\n```\n"
+                    f"Landscape label: {landscape.landscape_label}\n"
+                )
+            except Exception:
+                pass
+
         user_message = (
             f"Iteration {iteration}: the swarm state is shown below.\n\n"
-            f"```json\n{state_json}\n```\n\n"
+            f"```json\n{state_json}\n```"
+            f"{landscape_block}\n"
             f"Analyze the state, think about what is happening to the swarm, "
             f"and decide which tool to call (or 'none' if no intervention is needed).\n"
             f"Return your decision as a JSON object with keys: thought, action, params, done."

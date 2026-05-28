@@ -1,0 +1,50 @@
+{
+  "iteration": 330,
+  "mode": "llm_react",
+  "state": {
+    "iteration": 330,
+    "gbest": 1.1315510544538316,
+    "previous_gbest": 1.1315684607629521,
+    "best_delta": 1.740630912050456e-05,
+    "relative_improvement": 1.538246224074545e-05,
+    "no_improve_iters": 0,
+    "diversity": 0.0014121123365678908,
+    "normalized_diversity": 2.148460501304336e-07,
+    "position_std_mean": 5.582414010288324e-05,
+    "swarm_radius": 0.003561179701911518,
+    "velocity_norm_mean": 0.0020436164114688913,
+    "velocity_norm_std": 0.0011069353129457428,
+    "velocity_zero_ratio": 0.7333333333333333,
+    "velocity_direction_consistency": 0.9999999999999793,
+    "fitness_best": 1.1315510544538316,
+    "fitness_mean": 1.1315727631477372,
+    "fitness_worst": 1.1316065533699513,
+    "fitness_std": 1.5889880345290572e-05,
+    "fitness_cv": 1.4042296582933927e-05,
+    "boundary_hit_ratio": 0.0,
+    "velocity_clip_ratio": 0.0,
+    "state_label": "diversity_collapse",
+    "reasons": [
+      "low normalized diversity (0.00000)",
+      "many particles have near-zero velocity (0.73)",
+      "particle velocities are highly aligned",
+      "EMERGENCY: diversity collapsed with frozen particles"
+    ]
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "thought": "The swarm is in a diversity_collapse state: normalized diversity is essentially zero, 73% of particles have near-zero velocity, and velocities are highly aligned. This is an emergency situation even though the global best improved slightly — the swarm is trapped and cannot explore further. The landscape is a deceptive valley with high deceptiveness, but the primary issue is collapsed diversity. Per guidelines, reset_worst_particles with ratio >= 0.35 is the appropriate emergency intervention to restore exploration. I set ratio=0.35, reset velocities, and increase inertia to 1.1 to promote continued exploration after reset.",
+      "action": "reset_worst_particles",
+      "params": {
+        "ratio": 0.35,
+        "reset_velocity": true,
+        "inertia_weight": 1.1
+      },
+      "observation": "Action 'reset_worst_particles' was applied. Reinitialized 11 weak particles to restore diversity. Best cost changed from 1.131551e+00 to 1.131551e+00 (delta=+0.000000e+00).",
+      "improvement": 0.0,
+      "done": true
+    }
+  ],
+  "applied": true
+}

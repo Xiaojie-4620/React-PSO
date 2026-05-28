@@ -1,0 +1,169 @@
+[
+  {
+    "iteration": 102,
+    "mode": "rule",
+    "state": {
+      "iteration": 102,
+      "gbest": 4.940609376357482,
+      "previous_gbest": 4.940633943001249,
+      "best_delta": 2.4566643766377183e-05,
+      "relative_improvement": 4.972366714432981e-06,
+      "no_improve_iters": 0,
+      "diversity": 6.118188652374265e-05,
+      "normalized_diversity": 1.7453489249882906e-07,
+      "position_std_mean": 5.557134769037852e-06,
+      "swarm_radius": 0.0001663683760529719,
+      "velocity_norm_mean": 0.00011394932703437895,
+      "velocity_norm_std": 7.822832226591606e-05,
+      "velocity_zero_ratio": 0.8333333333333334,
+      "velocity_direction_consistency": 0.5855807145320331,
+      "fitness_best": 4.940609376357482,
+      "fitness_mean": 4.94062982708876,
+      "fitness_worst": 4.940670702147237,
+      "fitness_std": 1.482422721514437e-05,
+      "fitness_cv": 3.0004731651550323e-06,
+      "boundary_hit_ratio": 0.0,
+      "velocity_clip_ratio": 0.0,
+      "state_label": "diversity_collapse",
+      "reasons": [
+        "low normalized diversity (0.00000)",
+        "many particles have near-zero velocity (0.83)",
+        "EMERGENCY: diversity collapsed with frozen particles"
+      ]
+    },
+    "decision": {
+      "state_label": "diversity_collapse",
+      "thought": "Diversity has catastrophically collapsed with frozen particles. Immediate aggressive reset to restore any exploration capability.",
+      "action": "reset_worst_particles",
+      "params": {
+        "ratio": 0.4,
+        "reset_velocity": true,
+        "inertia_weight": 1.2
+      }
+    },
+    "result": {
+      "name": "reset_worst_particles",
+      "applied": true,
+      "changed_particles": 12,
+      "inertia_weight": 1.2,
+      "summary": "Reinitialized 12 weak particles to restore diversity.",
+      "params": {
+        "ratio": 0.4,
+        "reset_velocity": true,
+        "inertia_weight": 1.2
+      }
+    }
+  },
+  {
+    "iteration": 247,
+    "mode": "rule",
+    "state": {
+      "iteration": 247,
+      "gbest": 3.335637070247046,
+      "previous_gbest": 3.3356427105461575,
+      "best_delta": 5.640299111320246e-06,
+      "relative_improvement": 1.690918242978349e-06,
+      "no_improve_iters": 0,
+      "diversity": 0.0001047107907208909,
+      "normalized_diversity": 2.987107400626801e-07,
+      "position_std_mean": 7.429786418285126e-06,
+      "swarm_radius": 0.0007643346420594278,
+      "velocity_norm_mean": 0.00013765899035114373,
+      "velocity_norm_std": 0.00015848328231110972,
+      "velocity_zero_ratio": 0.7666666666666667,
+      "velocity_direction_consistency": 0.9702383579867405,
+      "fitness_best": 3.335637070247046,
+      "fitness_mean": 3.3356428176553523,
+      "fitness_worst": 3.3356529685375524,
+      "fitness_std": 4.132305374983426e-06,
+      "fitness_cv": 1.2388332926749194e-06,
+      "boundary_hit_ratio": 0.0,
+      "velocity_clip_ratio": 0.0,
+      "state_label": "diversity_collapse",
+      "reasons": [
+        "low normalized diversity (0.00000)",
+        "many particles have near-zero velocity (0.77)",
+        "particle velocities are highly aligned",
+        "EMERGENCY: diversity collapsed with frozen particles"
+      ]
+    },
+    "decision": {
+      "state_label": "diversity_collapse",
+      "thought": "Diversity has catastrophically collapsed with frozen particles. Immediate aggressive reset to restore any exploration capability.",
+      "action": "reset_worst_particles",
+      "params": {
+        "ratio": 0.4,
+        "reset_velocity": true,
+        "inertia_weight": 1.2
+      }
+    },
+    "result": {
+      "name": "reset_worst_particles",
+      "applied": true,
+      "changed_particles": 12,
+      "inertia_weight": 1.2,
+      "summary": "Reinitialized 12 weak particles to restore diversity.",
+      "params": {
+        "ratio": 0.4,
+        "reset_velocity": true,
+        "inertia_weight": 1.2
+      }
+    }
+  },
+  {
+    "iteration": 411,
+    "mode": "rule",
+    "state": {
+      "iteration": 411,
+      "gbest": 3.183814983268402,
+      "previous_gbest": 3.183843705573555,
+      "best_delta": 2.8722305152939498e-05,
+      "relative_improvement": 9.021267313674653e-06,
+      "no_improve_iters": 0,
+      "diversity": 6.589495020876148e-05,
+      "normalized_diversity": 1.879799513282209e-07,
+      "position_std_mean": 2.6907747058488686e-06,
+      "swarm_radius": 0.00021545078515237018,
+      "velocity_norm_mean": 0.00010294160659169119,
+      "velocity_norm_std": 6.333275849856799e-05,
+      "velocity_zero_ratio": 0.7666666666666667,
+      "velocity_direction_consistency": 0.9999999999568829,
+      "fitness_best": 3.183814983268402,
+      "fitness_mean": 3.183851618866274,
+      "fitness_worst": 3.1839139196660367,
+      "fitness_std": 2.332408984351837e-05,
+      "fitness_cv": 7.325746496887238e-06,
+      "boundary_hit_ratio": 0.0,
+      "velocity_clip_ratio": 0.0,
+      "state_label": "diversity_collapse",
+      "reasons": [
+        "low normalized diversity (0.00000)",
+        "many particles have near-zero velocity (0.77)",
+        "particle velocities are highly aligned",
+        "EMERGENCY: diversity collapsed with frozen particles"
+      ]
+    },
+    "decision": {
+      "state_label": "diversity_collapse",
+      "thought": "Diversity has catastrophically collapsed with frozen particles. Immediate aggressive reset to restore any exploration capability.",
+      "action": "reset_worst_particles",
+      "params": {
+        "ratio": 0.4,
+        "reset_velocity": true,
+        "inertia_weight": 1.2
+      }
+    },
+    "result": {
+      "name": "reset_worst_particles",
+      "applied": true,
+      "changed_particles": 12,
+      "inertia_weight": 1.2,
+      "summary": "Reinitialized 12 weak particles to restore diversity.",
+      "params": {
+        "ratio": 0.4,
+        "reset_velocity": true,
+        "inertia_weight": 1.2
+      }
+    }
+  }
+]

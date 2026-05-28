@@ -1,0 +1,49 @@
+{
+  "iteration": 728,
+  "mode": "llm_react",
+  "state": {
+    "iteration": 728,
+    "gbest": 19.89916099125894,
+    "previous_gbest": 19.89916099125894,
+    "best_delta": 0.0,
+    "relative_improvement": 0.0,
+    "no_improve_iters": 200,
+    "diversity": 2.847898650538656e-12,
+    "normalized_diversity": 8.794771758810611e-14,
+    "position_std_mean": 3.896940107742401e-13,
+    "swarm_radius": 1.333445400991681e-11,
+    "velocity_norm_mean": 2.7596761259806606e-12,
+    "velocity_norm_std": 3.4254918934383095e-12,
+    "velocity_zero_ratio": 1.0,
+    "velocity_direction_consistency": 0.0,
+    "fitness_best": 19.89916099125894,
+    "fitness_mean": 19.899160991258935,
+    "fitness_worst": 19.899160991258952,
+    "fitness_std": 5.728578676879117e-15,
+    "fitness_cv": 2.8788041261616502e-16,
+    "boundary_hit_ratio": 0.0,
+    "velocity_clip_ratio": 0.0,
+    "state_label": "premature_convergence",
+    "reasons": [
+      "no improvement for 200 iterations",
+      "low normalized diversity",
+      "many particles have near-zero velocity"
+    ]
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "thought": "The swarm is in a state of premature convergence with zero velocity, identical fitness values, and no diversity. The global best is stuck at 19.899, far from the global optimum of 0. Since diversity has completely collapsed, a large fraction of particles must be reinitialized randomly to introduce exploration. Resetting 50% of the particles and randomizing their velocities, while also increasing inertia weight to promote further exploration, is the most direct way to escape this local basin.",
+      "action": "reset_worst_particles",
+      "params": {
+        "ratio": 0.5,
+        "reset_velocity": true,
+        "inertia_weight": 1.1
+      },
+      "observation": "Action 'reset_worst_particles' was applied. Reinitialized 15 weak particles to restore diversity. Best cost changed from 1.989916e+01 to 1.989916e+01 (delta=+0.000000e+00).",
+      "improvement": 0.0,
+      "done": true
+    }
+  ],
+  "applied": true
+}

@@ -33,43 +33,25 @@
   "turns": [
     {
       "turn": 1,
-      "thought": "[OBSERVE] The swarm is completely stalled at a near-optimal solution (gbest=1.16e-05) with zero velocities (velocity_zero_ratio=1.0). Diversity is virtually zero (normalized_diversity=1.47e-19), and all particles share essentially the same fitness (fitness_std=2.37e-19). No improvement for 200 iterations, with the best delta being just 2.88e-19, likely floating-point rounding error. The state label confirms premature convergence. | [DIAGNOSE] The root cause is that all particles have collapsed to the same point (the current gbest), so the cognitive and social components of the velocity update are zero. With an inertia weight less than 1 (likely), velocities decayed to zero and cannot recover. The function is unimodal sphere, so there is no deceptive trap—only a loss of momentum preventing further descent toward the true optimum (0). Precision-wise, the solution is close but not yet at the limit, so re‑energizing local search is expected to yield further improvement. | [STRATEGIZE] The goal is to reintroduce small, controlled perturbations to break the symmetry and provide non‑zero velocities while preserving the high‑quality region. Gaussian mutation targeting the worst particles (ratio ~0.2–0.5) with a very small scale (1e‑4 relative to the search span) will add just enough positional noise to reactivate the cognitive/social terms without losing the basin. Simultaneously raising the inertia weight (to 1.2) will sustain the new velocities and prevent immediate re‑stalling. This is preferred over a complete reset (which would inject overly large diversity) or parameter‑only changes (which cannot create velocity when all are zero).",
-      "action": "gaussian_mutation",
+      "thought": "[OBSERVE] The swarm has converged to a point (gbest ~1.164e-05) with zero velocity, diversity near machine epsilon (9.28e-17), no improvement for 200 iterations. Fitness is essentially identical across particles (fitness_std 2.37e-19). The state is premature convergence. | [DIAGNOSE] The swarm prematurely converged to a non-optimal point because of loss of diversity and zero velocities, likely due to inertia weight decay or cognitive/social coefficients leading to collapse. This is a classic premature convergence on a simple unimodal function; the swarm stopped exploring before reaching the global optimum. | [STRATEGIZE] Inject diversity by randomly reinitializing a fraction of particles (0.5) across the search space with new velocities. Also set a moderately high inertia weight (1.1) to promote further exploration and prevent immediate re-collapse. This is better than levy_flight because Levy jumps around the current best might remain stuck if the current best is not a basin of the true optimum.",
+      "action": "reset_worst_particles",
       "params": {
-        "ratio": 0.3,
-        "scale": 0.0001,
-        "target": "worst",
-        "inertia_weight": 1.2
+        "ratio": 0.5,
+        "reset_velocity": true,
+        "inertia_weight": 1.1
       },
-      "observation": "Action 'gaussian_mutation' was applied. Applied Gaussian mutation to 9 particles. Best cost changed from 1.163970e-05 to 1.163970e-05 (delta=+0.000000e+00).\n\nNow REFLECT: Was your diagnosis correct? Did the intervention help? Update your understanding and decide the next step. Respond with: reflect, revised_diagnose, action, params, done.",
+      "observation": "Action 'reset_worst_particles' was applied. Reinitialized 15 weak particles to restore diversity. Best cost changed from 1.163970e-05 to 1.163970e-05 (delta=+0.000000e+00).\n\nNow REFLECT: Was your diagnosis correct? Did the intervention help? Update your understanding and decide the next step. Respond with: reflect, revised_diagnose, action, params, done.",
       "improvement": 0.0,
       "done": false
     },
     {
       "turn": 2,
       "thought": "",
-      "action": "levy_flight",
-      "params": {
-        "ratio": 0.3,
-        "scale": 0.0001,
-        "beta": 1.8,
-        "target": "worst",
-        "inertia_weight": 1.3
-      },
-      "observation": "Action 'levy_flight' was applied. Applied Levy-flight jumps to 9 particles. Best cost changed from 1.163970e-05 to 1.163970e-05 (delta=+0.000000e+00).\n\nNow REFLECT: Was your diagnosis correct? Did the intervention help? Update your understanding and decide the next step. Respond with: reflect, revised_diagnose, action, params, done.",
+      "action": "none",
+      "params": {},
+      "observation": "Action 'none' was NOT applied (no particles changed). Best cost remains 1.163970e-05.\n\nNow REFLECT: Was your diagnosis correct? Did the intervention help? Update your understanding and decide the next step. Respond with: reflect, revised_diagnose, action, params, done.",
       "improvement": 0.0,
-      "done": false
-    },
-    {
-      "turn": 3,
-      "thought": "",
-      "action": "generate_custom_heuristic",
-      "params": {
-        "code_description": "Select the worst (all are equal) 30% of particles. For each selected particle, compute its current position vector. Shrink this vector by a uniform random factor drawn from [0.1, 0.5] (i.e., new_position = factor * old_position). This moves the particle towards the origin, guaranteeing a lower cost. Assign a small random velocity with norm proportional to the displacement and directed towards the origin. Set inertia weight to 0.9 after the operation to allow convergence once a new gbest is found. Ensure the function signature matches: (position, velocity) -> (new_position, new_velocity, inertia_weight)."
-      },
-      "observation": "Action 'generate_custom_heuristic' was NOT applied (no particles changed). Best cost remains 1.163970e-05.\n\nNow REFLECT: Was your diagnosis correct? Did the intervention help? Update your understanding and decide the next step. Respond with: reflect, revised_diagnose, action, params, done.",
-      "improvement": 0.0,
-      "done": false
+      "done": true
     }
   ],
   "applied": true

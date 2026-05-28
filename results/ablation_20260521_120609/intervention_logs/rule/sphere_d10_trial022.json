@@ -1,0 +1,222 @@
+[
+  {
+    "iteration": 288,
+    "mode": "rule",
+    "state": {
+      "iteration": 288,
+      "gbest": 6.1552969886092175e-09,
+      "previous_gbest": 6.155296988609547e-09,
+      "best_delta": 3.29217883796105e-22,
+      "relative_improvement": 5.3485296388675765e-14,
+      "no_improve_iters": 200,
+      "diversity": 1.2925677495099798e-18,
+      "normalized_diversity": 2.043729059264763e-21,
+      "position_std_mean": 1.566364216440825e-19,
+      "swarm_radius": 3.537225697515094e-18,
+      "velocity_norm_mean": 2.8141698168051662e-18,
+      "velocity_norm_std": 2.2338987929390784e-18,
+      "velocity_zero_ratio": 1.0,
+      "velocity_direction_consistency": 0.0,
+      "fitness_best": 6.1552969886092175e-09,
+      "fitness_mean": 6.155296988609659e-09,
+      "fitness_worst": 6.1552969886101935e-09,
+      "fitness_std": 2.3413220236058425e-22,
+      "fitness_cv": 3.8037515134337876e-14,
+      "boundary_hit_ratio": 0.0,
+      "velocity_clip_ratio": 0.0,
+      "state_label": "premature_convergence",
+      "reasons": [
+        "no improvement for 200 iterations",
+        "low normalized diversity",
+        "many particles have near-zero velocity"
+      ]
+    },
+    "decision": {
+      "state_label": "premature_convergence",
+      "thought": "Diversity and velocity both collapsed, so the swarm likely converged to a local basin; resetting weak particles should restore exploration.",
+      "action": "reset_worst_particles",
+      "params": {
+        "ratio": 0.3,
+        "reset_velocity": true,
+        "inertia_weight": 1.1
+      }
+    },
+    "result": {
+      "name": "reset_worst_particles",
+      "applied": true,
+      "changed_particles": 9,
+      "inertia_weight": 1.1,
+      "summary": "Reinitialized 9 weak particles to restore diversity.",
+      "params": {
+        "ratio": 0.3,
+        "reset_velocity": true,
+        "inertia_weight": 1.1
+      }
+    }
+  },
+  {
+    "iteration": 488,
+    "mode": "rule",
+    "state": {
+      "iteration": 488,
+      "gbest": 1.5616368491565335e-13,
+      "previous_gbest": 1.5616376139054967e-13,
+      "best_delta": 7.647489632123093e-20,
+      "relative_improvement": 7.647489632123093e-08,
+      "no_improve_iters": 200,
+      "diversity": 7.796357608813642e-14,
+      "normalized_diversity": 1.232712374851757e-16,
+      "position_std_mean": 8.802268113530816e-15,
+      "swarm_radius": 1.6687006156984352e-13,
+      "velocity_norm_mean": 1.4713014466947525e-13,
+      "velocity_norm_std": 1.0834174785944557e-13,
+      "velocity_zero_ratio": 1.0,
+      "velocity_direction_consistency": 0.0,
+      "fitness_best": 1.5616368491565335e-13,
+      "fitness_mean": 1.5616379297638146e-13,
+      "fitness_worst": 1.5616392471431886e-13,
+      "fitness_std": 6.948721667663575e-20,
+      "fitness_cv": 6.948721667663575e-08,
+      "boundary_hit_ratio": 0.0,
+      "velocity_clip_ratio": 0.0,
+      "state_label": "premature_convergence",
+      "reasons": [
+        "no improvement for 200 iterations",
+        "low normalized diversity",
+        "many particles have near-zero velocity"
+      ]
+    },
+    "decision": {
+      "state_label": "premature_convergence",
+      "thought": "Diversity and velocity both collapsed, so the swarm likely converged to a local basin; resetting weak particles should restore exploration.",
+      "action": "reset_worst_particles",
+      "params": {
+        "ratio": 0.3,
+        "reset_velocity": true,
+        "inertia_weight": 1.1
+      }
+    },
+    "result": {
+      "name": "reset_worst_particles",
+      "applied": true,
+      "changed_particles": 9,
+      "inertia_weight": 1.1,
+      "summary": "Reinitialized 9 weak particles to restore diversity.",
+      "params": {
+        "ratio": 0.3,
+        "reset_velocity": true,
+        "inertia_weight": 1.1
+      }
+    }
+  },
+  {
+    "iteration": 688,
+    "mode": "rule",
+    "state": {
+      "iteration": 688,
+      "gbest": 3.911016230551963e-17,
+      "previous_gbest": 3.911050034136027e-17,
+      "best_delta": 3.3803584064245525e-22,
+      "relative_improvement": 3.3803584064245524e-10,
+      "no_improve_iters": 200,
+      "diversity": 2.779383682559108e-13,
+      "normalized_diversity": 4.3945914641965943e-16,
+      "position_std_mean": 3.4652840537145364e-14,
+      "swarm_radius": 9.213164920102055e-13,
+      "velocity_norm_mean": 5.565401030643567e-13,
+      "velocity_norm_std": 3.4826491695751333e-13,
+      "velocity_zero_ratio": 1.0,
+      "velocity_direction_consistency": 0.0,
+      "fitness_best": 3.911016230551963e-17,
+      "fitness_mean": 3.9110542652799365e-17,
+      "fitness_worst": 3.911137081423045e-17,
+      "fitness_std": 3.113559602133443e-22,
+      "fitness_cv": 3.113559602133443e-10,
+      "boundary_hit_ratio": 0.0,
+      "velocity_clip_ratio": 0.0,
+      "state_label": "premature_convergence",
+      "reasons": [
+        "no improvement for 200 iterations",
+        "low normalized diversity",
+        "many particles have near-zero velocity"
+      ]
+    },
+    "decision": {
+      "state_label": "premature_convergence",
+      "thought": "Diversity and velocity both collapsed, so the swarm likely converged to a local basin; resetting weak particles should restore exploration.",
+      "action": "reset_worst_particles",
+      "params": {
+        "ratio": 0.3,
+        "reset_velocity": true,
+        "inertia_weight": 1.1
+      }
+    },
+    "result": {
+      "name": "reset_worst_particles",
+      "applied": true,
+      "changed_particles": 9,
+      "inertia_weight": 1.1,
+      "summary": "Reinitialized 9 weak particles to restore diversity.",
+      "params": {
+        "ratio": 0.3,
+        "reset_velocity": true,
+        "inertia_weight": 1.1
+      }
+    }
+  },
+  {
+    "iteration": 888,
+    "mode": "rule",
+    "state": {
+      "iteration": 888,
+      "gbest": 2.733753110346081e-19,
+      "previous_gbest": 2.736547060147082e-19,
+      "best_delta": 2.793949801001193e-22,
+      "relative_improvement": 2.7939498010011926e-10,
+      "no_improve_iters": 200,
+      "diversity": 2.2118734035814865e-13,
+      "normalized_diversity": 3.497278925633166e-16,
+      "position_std_mean": 2.6929868584998128e-14,
+      "swarm_radius": 6.617568086026494e-13,
+      "velocity_norm_mean": 3.7742217352012235e-13,
+      "velocity_norm_std": 3.0645138457616076e-13,
+      "velocity_zero_ratio": 1.0,
+      "velocity_direction_consistency": 0.0,
+      "fitness_best": 2.733753110346081e-19,
+      "fitness_mean": 2.737080089720346e-19,
+      "fitness_worst": 2.741957317473736e-19,
+      "fitness_std": 1.9836268383496654e-22,
+      "fitness_cv": 1.9836268383496653e-10,
+      "boundary_hit_ratio": 0.0,
+      "velocity_clip_ratio": 0.0,
+      "state_label": "premature_convergence",
+      "reasons": [
+        "no improvement for 200 iterations",
+        "low normalized diversity",
+        "many particles have near-zero velocity"
+      ]
+    },
+    "decision": {
+      "state_label": "premature_convergence",
+      "thought": "Diversity and velocity both collapsed, so the swarm likely converged to a local basin; resetting weak particles should restore exploration.",
+      "action": "reset_worst_particles",
+      "params": {
+        "ratio": 0.3,
+        "reset_velocity": true,
+        "inertia_weight": 1.1
+      }
+    },
+    "result": {
+      "name": "reset_worst_particles",
+      "applied": true,
+      "changed_particles": 9,
+      "inertia_weight": 1.1,
+      "summary": "Reinitialized 9 weak particles to restore diversity.",
+      "params": {
+        "ratio": 0.3,
+        "reset_velocity": true,
+        "inertia_weight": 1.1
+      }
+    }
+  }
+]

@@ -16,19 +16,19 @@
     "n_valid": 1
   },
   "llm_react": {
-    "mean": 1.054733261055551e-09,
+    "mean": Infinity,
     "std": 0.0,
-    "median": 1.054733261055551e-09,
-    "best": 1.054733261055551e-09,
-    "worst": 1.054733261055551e-09,
-    "n_valid": 1
+    "median": Infinity,
+    "best": Infinity,
+    "worst": Infinity,
+    "n_valid": 0
   },
   "llm_react_deep": {
-    "mean": 2.147424287753858e-22,
+    "mean": Infinity,
     "std": 0.0,
-    "median": 2.147424287753858e-22,
-    "best": 2.147424287753858e-22,
-    "worst": 2.147424287753858e-22,
-    "n_valid": 1
+    "median": Infinity,
+    "best": Infinity,
+    "worst": Infinity,
+    "n_valid": 0
   }
 }

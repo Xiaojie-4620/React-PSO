@@ -1,0 +1,227 @@
+[
+  {
+    "iteration": 156,
+    "mode": "rule",
+    "state": {
+      "iteration": 156,
+      "gbest": 423.4331226836507,
+      "previous_gbest": 423.434389352632,
+      "best_delta": 0.0012666689813158882,
+      "relative_improvement": 2.9914173557146267e-06,
+      "no_improve_iters": 0,
+      "diversity": 0.00014460188195141536,
+      "normalized_diversity": 1.3200285433748222e-07,
+      "position_std_mean": 5.998730370601968e-06,
+      "swarm_radius": 0.00055314356993863,
+      "velocity_norm_mean": 0.0002863420987350819,
+      "velocity_norm_std": 0.0002891913619546074,
+      "velocity_zero_ratio": 0.8,
+      "velocity_direction_consistency": 1.0,
+      "fitness_best": 423.4331226836507,
+      "fitness_mean": 423.43455363573673,
+      "fitness_worst": 423.4387019395605,
+      "fitness_std": 0.00134957681573159,
+      "fitness_cv": 3.1872146572444705e-06,
+      "boundary_hit_ratio": 0.0,
+      "velocity_clip_ratio": 0.0,
+      "state_label": "diversity_collapse",
+      "reasons": [
+        "low normalized diversity (0.00000)",
+        "many particles have near-zero velocity (0.80)",
+        "particle velocities are highly aligned",
+        "EMERGENCY: diversity collapsed with frozen particles"
+      ]
+    },
+    "decision": {
+      "state_label": "diversity_collapse",
+      "thought": "Diversity has catastrophically collapsed with frozen particles. Immediate aggressive reset to restore any exploration capability.",
+      "action": "reset_worst_particles",
+      "params": {
+        "ratio": 0.4,
+        "reset_velocity": true,
+        "inertia_weight": 1.2
+      }
+    },
+    "result": {
+      "name": "reset_worst_particles",
+      "applied": true,
+      "changed_particles": 12,
+      "inertia_weight": 1.2,
+      "summary": "Reinitialized 12 weak particles to restore diversity.",
+      "params": {
+        "ratio": 0.4,
+        "reset_velocity": true,
+        "inertia_weight": 1.2
+      }
+    }
+  },
+  {
+    "iteration": 344,
+    "mode": "rule",
+    "state": {
+      "iteration": 344,
+      "gbest": 25.854478250239055,
+      "previous_gbest": 25.855046993650088,
+      "best_delta": 0.0005687434110335232,
+      "relative_improvement": 2.199738454055816e-05,
+      "no_improve_iters": 0,
+      "diversity": 0.00011343346387978273,
+      "normalized_diversity": 1.0355011157150745e-07,
+      "position_std_mean": 4.880821071157263e-06,
+      "swarm_radius": 0.0003903877069653117,
+      "velocity_norm_mean": 0.00029783285602015053,
+      "velocity_norm_std": 0.00024143442868607124,
+      "velocity_zero_ratio": 0.8333333333333334,
+      "velocity_direction_consistency": 1.0,
+      "fitness_best": 25.854478250239055,
+      "fitness_mean": 25.85501329085065,
+      "fitness_worst": 25.855929955913254,
+      "fitness_std": 0.000343793398048865,
+      "fitness_cv": 1.329697239685905e-05,
+      "boundary_hit_ratio": 0.0,
+      "velocity_clip_ratio": 0.0,
+      "state_label": "diversity_collapse",
+      "reasons": [
+        "low normalized diversity (0.00000)",
+        "many particles have near-zero velocity (0.83)",
+        "particle velocities are highly aligned",
+        "EMERGENCY: diversity collapsed with frozen particles"
+      ]
+    },
+    "decision": {
+      "state_label": "diversity_collapse",
+      "thought": "Diversity has catastrophically collapsed with frozen particles. Immediate aggressive reset to restore any exploration capability.",
+      "action": "reset_worst_particles",
+      "params": {
+        "ratio": 0.4,
+        "reset_velocity": true,
+        "inertia_weight": 1.2
+      }
+    },
+    "result": {
+      "name": "reset_worst_particles",
+      "applied": true,
+      "changed_particles": 12,
+      "inertia_weight": 1.2,
+      "summary": "Reinitialized 12 weak particles to restore diversity.",
+      "params": {
+        "ratio": 0.4,
+        "reset_velocity": true,
+        "inertia_weight": 1.2
+      }
+    }
+  },
+  {
+    "iteration": 417,
+    "mode": "rule",
+    "state": {
+      "iteration": 417,
+      "gbest": 24.47702666459093,
+      "previous_gbest": 24.47702666459093,
+      "best_delta": 0.0,
+      "relative_improvement": 0.0,
+      "no_improve_iters": 20,
+      "diversity": 2.5981114073360767,
+      "normalized_diversity": 0.00237174037451577,
+      "position_std_mean": 0.508505859419155,
+      "swarm_radius": 11.544070357037441,
+      "velocity_norm_mean": 2.6939056200246996,
+      "velocity_norm_std": 4.223564849534093,
+      "velocity_zero_ratio": 0.13333333333333333,
+      "velocity_direction_consistency": 0.4327621591579497,
+      "fitness_best": 24.47702666605216,
+      "fitness_mean": 41.056463964592794,
+      "fitness_worst": 167.6909124392803,
+      "fitness_std": 36.828435463254316,
+      "fitness_cv": 0.8970191757140912,
+      "boundary_hit_ratio": 0.0,
+      "velocity_clip_ratio": 0.0,
+      "state_label": "rugged_plateau_trap",
+      "reasons": [
+        "no improvement for 20 iterations",
+        "low normalized diversity (0.00237)",
+        "rugged plateau (ruggedness=0.837, gradient=0.009)"
+      ]
+    },
+    "decision": {
+      "state_label": "rugged_plateau_trap",
+      "thought": "The landscape is a rugged plateau (ruggedness=0.837) with weak gradients. Landscape-adaptive mutation scales perturbations to the terrain roughness.",
+      "action": "landscape_adaptive_mutation",
+      "params": {
+        "ratio": 0.3,
+        "ruggedness": 0.8369801274494526,
+        "target": "worst",
+        "inertia_weight": 1.1
+      }
+    },
+    "result": {
+      "name": "landscape_adaptive_mutation",
+      "applied": true,
+      "changed_particles": 9,
+      "inertia_weight": 1.1,
+      "summary": "Landscape-adaptive mutation (scale=0.127) on 9 particles.",
+      "params": {
+        "ratio": 0.3,
+        "ruggedness": 0.8369801274494526,
+        "target": "worst",
+        "inertia_weight": 1.1
+      }
+    }
+  },
+  {
+    "iteration": 445,
+    "mode": "rule",
+    "state": {
+      "iteration": 445,
+      "gbest": 24.477026664582155,
+      "previous_gbest": 24.477026664582155,
+      "best_delta": 0.0,
+      "relative_improvement": 0.0,
+      "no_improve_iters": 28,
+      "diversity": 30.141504345146572,
+      "normalized_diversity": 0.027515303078294594,
+      "position_std_mean": 8.081766124155427,
+      "swarm_radius": 98.37075695020846,
+      "velocity_norm_mean": 34.5983966146773,
+      "velocity_norm_std": 48.93372048977485,
+      "velocity_zero_ratio": 0.03333333333333333,
+      "velocity_direction_consistency": 0.4672339596321779,
+      "fitness_best": 24.477026664979707,
+      "fitness_mean": 2168.79018597205,
+      "fitness_worst": 10245.306134297743,
+      "fitness_std": 3297.4967601188073,
+      "fitness_cv": 1.5204314282899947,
+      "boundary_hit_ratio": 0.0,
+      "velocity_clip_ratio": 0.02666666666666667,
+      "state_label": "rugged_plateau_trap",
+      "reasons": [
+        "no improvement for 28 iterations",
+        "rugged plateau (ruggedness=0.837, gradient=0.009)"
+      ]
+    },
+    "decision": {
+      "state_label": "rugged_plateau_trap",
+      "thought": "The landscape is a rugged plateau (ruggedness=0.837) with weak gradients. Landscape-adaptive mutation scales perturbations to the terrain roughness.",
+      "action": "landscape_adaptive_mutation",
+      "params": {
+        "ratio": 0.3,
+        "ruggedness": 0.8369801274494526,
+        "target": "worst",
+        "inertia_weight": 1.1
+      }
+    },
+    "result": {
+      "name": "landscape_adaptive_mutation",
+      "applied": true,
+      "changed_particles": 9,
+      "inertia_weight": 1.1,
+      "summary": "Landscape-adaptive mutation (scale=0.127) on 9 particles.",
+      "params": {
+        "ratio": 0.3,
+        "ruggedness": 0.8369801274494526,
+        "target": "worst",
+        "inertia_weight": 1.1
+      }
+    }
+  }
+]

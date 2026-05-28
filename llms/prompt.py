@@ -43,11 +43,18 @@ You have the following tools at your disposal. For each decision, choose exactly
 ```
 
 # Decision Guidelines
-- **premature_convergence / velocity_collapse**: use reset_worst_particles or gaussian_mutation to restore diversity
+- **diversity_collapse** (EMERGENCY): use reset_worst_particles with ratio >= 0.35 to restore exploration
+- **velocity_death** (EMERGENCY): use gaussian_mutation or landscape_adaptive_mutation to re-energize frozen particles
+- **multimodal_diverse_stall**: use basin_hopping (if landscape data available) or levy_flight for long jumps
+- **premature_convergence**: diversity AND velocity collapsed — use reset_worst_particles or gaussian_mutation
+- **velocity_collapse**: velocity frozen but diversity present — use gaussian_mutation
 - **boundary_stagnation**: use opposition_reinit to pull particles back into the search space
-- **multimodal_trap**: use levy_flight for long jumps to escape local basins
 - **slow_stagnation with low diversity**: use reset_worst_particles
-- **slow_stagnation with moderate diversity**: use gaussian_mutation
+- **slow_stagnation with moderate diversity**: use gaussian_mutation or landscape_adaptive_mutation
+- **rugged_plateau_trap**: use landscape_adaptive_mutation (ruggedness from landscape profile scales the noise)
+- **deceptive_basin**: use basin_hopping with basin_radius from landscape profile to escape
+- **needle_in_haystack**: use landscape_adaptive_restart (small basin = wide restart) or levy_flight
+- **deep_valley_chase**: use gradient_descent_step to accelerate downhill descent
 - **normal_convergence**: use adjust_parameters to reduce exploration (lower inertia)
 - **normal_search**: use none (no intervention needed)
 
@@ -89,15 +96,18 @@ You have the following tools at your disposal. For each decision, choose exactly
 ```
 
 # Decision Guidelines
-- **premature_convergence / velocity_collapse**: use reset_worst_particles or gaussian_mutation to restore diversity
+- **diversity_collapse** (EMERGENCY): use reset_worst_particles with ratio >= 0.35 to restore exploration
+- **velocity_death** (EMERGENCY): use gaussian_mutation or landscape_adaptive_mutation to re-energize frozen particles
+- **multimodal_diverse_stall**: use basin_hopping (if landscape data available) or levy_flight for long jumps
+- **premature_convergence**: diversity AND velocity collapsed — use reset_worst_particles or gaussian_mutation
+- **velocity_collapse**: velocity frozen but diversity present — use gaussian_mutation
 - **boundary_stagnation**: use opposition_reinit to pull particles back into the search space
-- **multimodal_trap**: use levy_flight for long jumps to escape local basins
-- **rugged_plateau_trap**: use levy_flight or landscape_adaptive_mutation (larger scale for rugged terrain)
-- **deceptive_basin**: use opposition_reinit or basin_hopping to escape the deceptive region
-- **needle_in_haystack**: use levy_flight with heavy tails + large ratio
-- **deep_valley_chase**: use adjust_parameters to accelerate descent (reduce inertia)
 - **slow_stagnation with low diversity**: use reset_worst_particles
 - **slow_stagnation with moderate diversity**: use gaussian_mutation or landscape_adaptive_mutation
+- **rugged_plateau_trap**: use landscape_adaptive_mutation (ruggedness from landscape profile scales the noise)
+- **deceptive_basin**: use basin_hopping with basin_radius from landscape profile to escape
+- **needle_in_haystack**: use landscape_adaptive_restart (small basin = wide restart) or levy_flight
+- **deep_valley_chase**: use gradient_descent_step to accelerate downhill descent
 - **normal_convergence**: use adjust_parameters to reduce exploration (lower inertia)
 - **normal_search**: use none (no intervention needed)
 

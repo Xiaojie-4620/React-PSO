@@ -45,9 +45,9 @@ class SwarmStateAnalyzer:
         velocity_bounds: Sequence[Any],
         dim: int,
         improvement_tolerance: float = 1e-3,
-        stagnation_window: int = 20,
-        diversity_low_ratio: float = 0.03,
-        diversity_high_ratio: float = 0.20,
+        stagnation_window: int = 10,
+        diversity_low_ratio: float = 0.01,
+        diversity_high_ratio: float = 0.10,
         boundary_epsilon_ratio: float = 1e-6,
     ):
         self.dim = dim
@@ -63,6 +63,11 @@ class SwarmStateAnalyzer:
         self.velocity_diameter = float(np.linalg.norm(self.velocity_span))
         self.boundary_epsilon = np.maximum(self.search_span * boundary_epsilon_ratio, 1e-12)
         self.velocity_epsilon = np.maximum(self.velocity_span * boundary_epsilon_ratio, 1e-12)
+        # Emergency thresholds
+        self.diversity_collapse_threshold = 0.005
+        self.velocity_death_threshold = 0.85
+        self.velocity_frozen_threshold = 0.7
+        self.fitness_cv_multimodal_threshold = 0.05
 
     def analyze(self, pso, iteration: int, history: Sequence[float], no_improve_iters: int, landscape=None) -> SwarmState:
         position = np.asarray(pso.position, dtype=float)
@@ -174,14 +179,15 @@ class SwarmStateAnalyzer:
         landscape=None,
     ) -> Tuple[str, List[str]]:
         reasons: List[str] = []
-        stalled = no_improve_iters >= self.stagnation_window
 
+        # Build informational reasons
+        stalled = no_improve_iters >= self.stagnation_window
         if stalled:
             reasons.append(f"no improvement for {no_improve_iters} iterations")
         if normalized_diversity <= self.diversity_low_ratio:
-            reasons.append("low normalized diversity")
+            reasons.append(f"low normalized diversity ({normalized_diversity:.5f})")
         if velocity_zero_ratio >= 0.5:
-            reasons.append("many particles have near-zero velocity")
+            reasons.append(f"many particles have near-zero velocity ({velocity_zero_ratio:.2f})")
         if boundary_hit_ratio >= 0.15:
             reasons.append("many coordinates are on search boundaries")
         if velocity_clip_ratio >= 0.15:
@@ -189,8 +195,19 @@ class SwarmStateAnalyzer:
         if velocity_direction_consistency >= 0.85:
             reasons.append("particle velocities are highly aligned")
 
-        # --- Landscape-aware classification (takes priority when available) ---
-        if landscape is not None and stalled:
+        improving = relative_improvement > self.improvement_tolerance
+
+        # === Layer 1: Emergency signals (NO stall requirement) ===
+        if normalized_diversity <= self.diversity_collapse_threshold and velocity_zero_ratio >= 0.7:
+            reasons.append("EMERGENCY: diversity collapsed with frozen particles")
+            return "diversity_collapse", reasons
+
+        if velocity_zero_ratio >= self.velocity_death_threshold and normalized_diversity > self.diversity_collapse_threshold:
+            reasons.append("EMERGENCY: particles frozen but still spread out")
+            return "velocity_death", reasons
+
+        # === Layer 2: Landscape-aware classification (takes priority when data available) ===
+        if landscape is not None:
             label = self._classify_with_landscape(
                 stalled, normalized_diversity, velocity_zero_ratio,
                 boundary_hit_ratio, fitness_cv, landscape, reasons,
@@ -198,19 +215,32 @@ class SwarmStateAnalyzer:
             if label is not None:
                 return label, reasons
 
-        # --- Standard statistical classification ---
-        if stalled and boundary_hit_ratio >= 0.15:
-            return "boundary_stagnation", reasons
-        if stalled and normalized_diversity <= self.diversity_low_ratio and velocity_zero_ratio >= 0.5:
-            return "premature_convergence", reasons
-        if stalled and velocity_zero_ratio >= 0.7:
-            return "velocity_collapse", reasons
-        if stalled and normalized_diversity >= self.diversity_high_ratio and fitness_cv >= 0.1:
-            reasons.append("diverse swarm still cannot improve best fitness")
-            return "multimodal_trap", reasons
+        # === Layer 3: Stalled states with discriminating conditions ===
         if stalled:
+            # 3a: Boundary stagnation
+            if boundary_hit_ratio >= 0.15:
+                return "boundary_stagnation", reasons
+
+            # 3b: Diverse but stalled — multimodal trap detected BEFORE full collapse
+            if normalized_diversity >= 0.03 and fitness_cv >= self.fitness_cv_multimodal_threshold:
+                reasons.append("swarm is diverse but cannot improve — likely multimodal trap")
+                return "multimodal_diverse_stall", reasons
+
+            # 3c: Full premature convergence (low diversity AND frozen)
+            if normalized_diversity <= self.diversity_low_ratio and velocity_zero_ratio >= 0.5:
+                return "premature_convergence", reasons
+
+            # 3d: Velocity collapse WITHOUT diversity collapse
+            #     NOW reachable: requires frozen velocity BUT diversity still above low threshold
+            if velocity_zero_ratio >= self.velocity_frozen_threshold:
+                reasons.append("particles frozen but diversity still present")
+                return "velocity_collapse", reasons
+
+            # 3e: Generic slow stagnation (diversity and velocity both moderate)
             return "slow_stagnation", reasons
-        if relative_improvement > self.improvement_tolerance:
+
+        # === Layer 4: Normal (non-stalled) states ===
+        if improving:
             return "normal_search", reasons
         if normalized_diversity <= self.diversity_low_ratio:
             return "normal_convergence", reasons
@@ -224,30 +254,27 @@ class SwarmStateAnalyzer:
 
         Uses LandscapeProfile features to distinguish cases that look similar
         statistically but require different interventions.
+        Does NOT require 'stalled' — landscape features can identify problems early.
         """
         lp = landscape
 
-        # Rugged plateau: high ruggedness, low gradient, stalled
-        if lp.ruggedness > 0.6 and lp.gradient_magnitude_mean < 0.1 and stalled:
-            reasons.append(f"rugged plateau detected (ruggedness={lp.ruggedness:.3f})")
+        # Rugged plateau: high ruggedness, weak gradient
+        if lp.ruggedness > 0.5 and lp.gradient_magnitude_mean < 0.15:
+            reasons.append(f"rugged plateau (ruggedness={lp.ruggedness:.3f}, gradient={lp.gradient_magnitude_mean:.3f})")
             return "rugged_plateau_trap"
 
-        # Deceptive basin: high deceptiveness, convergence
-        if lp.deceptiveness > 0.5 and normalized_diversity <= self.diversity_low_ratio:
+        # Deceptive basin: high deceptiveness
+        if lp.deceptiveness > 0.4 and normalized_diversity <= 0.05:
             reasons.append(f"deceptive basin (deceptiveness={lp.deceptiveness:.3f})")
             return "deceptive_basin"
 
-        # Deep valley: low ruggedness, high gradient, improving
-        if lp.ruggedness < 0.3 and lp.gradient_magnitude_mean > 0.2 and not stalled:
+        # Deep valley: smooth with informative gradients, not stalled
+        if lp.ruggedness < 0.35 and lp.gradient_magnitude_mean > 0.15 and not stalled:
             reasons.append("deep valley with informative gradients")
             return "deep_valley_chase"
 
-        # Needle in haystack: high info content, low diversity, stalled
-        if (
-            lp.information_content > 0.6
-            and normalized_diversity <= self.diversity_low_ratio
-            and stalled
-        ):
+        # Needle in haystack: high info content, hard to find optimum
+        if lp.information_content > 0.5 and normalized_diversity <= 0.05:
             reasons.append(f"needle-in-haystack landscape (IC={lp.information_content:.3f})")
             return "needle_in_haystack"
 

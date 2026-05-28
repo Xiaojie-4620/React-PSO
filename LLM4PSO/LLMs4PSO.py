@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 try:
     from .actions import StrategyToolbox
     from .controller import RuleBasedReActController
+    from .landscape import LandscapeAnalyzer
     from .llm_react import LLMReActController
     from .react_deep import DeepReActController
     from .PSO import PSO
@@ -19,6 +20,7 @@ try:
 except ImportError:
     from actions import StrategyToolbox
     from controller import RuleBasedReActController
+    from landscape import LandscapeAnalyzer
     from llm_react import LLMReActController
     from react_deep import DeepReActController
     from PSO import PSO
@@ -76,11 +78,28 @@ class LLM4PSO:
             velocity_bounds=velocity_bounds,
             dim=dim,
             improvement_tolerance=self.improvement_tolerance,
-            stagnation_window=min(max(5, self.stagnation_threshold // 2), max(5, self.stagnation_threshold)),
+            stagnation_window=10,
         )
         self.toolbox = StrategyToolbox(position_bounds, velocity_bounds, dim)
         self.controller = RuleBasedReActController()
         self._react_controller = None
+
+        # Landscape analysis (online, sampling-based)
+        try:
+            b_low = float(position_bounds[0]) if not hasattr(position_bounds[0], '__len__') else -100.0
+            b_high = float(position_bounds[1]) if not hasattr(position_bounds[1], '__len__') else 100.0
+        except (TypeError, IndexError):
+            b_low, b_high = -100.0, 100.0
+        self.landscape_analyzer = LandscapeAnalyzer(
+            func=self.func,
+            dim=self.dim,
+            bounds=(b_low, b_high),
+            n_samples=200,
+        )
+        self._landscape_profile = None
+        self._last_landscape_update = -999
+        self._landscape_interval = max(25, min(100, self.max_iter // 20))
+        self._min_iter_before_intervention = 10
         if intervention_mode == "llm_react":
             self._init_react_controller()
 
@@ -146,12 +165,47 @@ class LLM4PSO:
 
         for i in range(1, self.max_iter):
             self._update_stagnation_counter()
+
+            # --- Periodic landscape analysis (amortized cost) ---
+            if i % self._landscape_interval == 0 and i > 0:
+                try:
+                    swarm_bbox = self._compute_swarm_bbox(pso)
+                    self._landscape_profile = self.landscape_analyzer.analyze(
+                        best_position=pso.g_Best_Position,
+                        swarm_bbox=swarm_bbox,
+                        gbest=pso.get_gBest(),
+                    )
+                    self._last_landscape_update = i
+                except Exception:
+                    pass  # landscape analysis is best-effort, not critical
+
+            # --- Fast state analysis (no landscape) ---
             state = self.state_analyzer.analyze(pso, i, self.Global_best, self.stagnation_counter)
             self.state_history.append(state)
 
-            if self._should_intervene(state):
-                self.stagnation = self._apply_intervention(pso, state, i)
-                self.stagnation_counter = 0  # reset after any intervention attempt (including "none")
+            if self._should_intervene_early(state, i):
+                # Refresh landscape if stale before classification
+                if self._landscape_profile is None or (i - self._last_landscape_update) > self._landscape_interval:
+                    try:
+                        swarm_bbox = self._compute_swarm_bbox(pso)
+                        self._landscape_profile = self.landscape_analyzer.analyze(
+                            best_position=pso.g_Best_Position,
+                            swarm_bbox=swarm_bbox,
+                            gbest=pso.get_gBest(),
+                        )
+                        self._last_landscape_update = i
+                    except Exception:
+                        pass
+
+                # Re-analyze state WITH landscape for accurate classification
+                state = self.state_analyzer.analyze(
+                    pso, i, self.Global_best, self.stagnation_counter,
+                    landscape=self._landscape_profile,
+                )
+                self.state_history[-1] = state
+
+                self.stagnation = self._apply_intervention(pso, state, i, self._landscape_profile)
+                self.stagnation_counter = 0
 
             if self.stagnation:
                 pso.evaluation(self.flag)
@@ -178,7 +232,7 @@ class LLM4PSO:
 
         return np.array(self.Global_best)
 
-    def _apply_intervention(self, pso, state, iteration):
+    def _apply_intervention(self, pso, state, iteration, landscape=None):
         if self.intervention_mode == "llm":
             print(
                 f"--- Iteration[{iteration}]: {state.state_label}; "
@@ -208,7 +262,7 @@ class LLM4PSO:
                 f"--- Iteration[{iteration}]: {state.state_label}; "
                 f"calling LLM ReAct controller ---"
             )
-            react_result = self._react_controller.decide_and_act(pso, state, iteration, self.Global_best, flag=self.flag)
+            react_result = self._react_controller.decide_and_act(pso, state, iteration, self.Global_best, flag=self.flag, landscape=landscape)
             if react_result.final_inertia_weight is not None:
                 self.w = react_result.final_inertia_weight
             self.action_history.append(
@@ -233,7 +287,7 @@ class LLM4PSO:
             )
             return react_result.applied
 
-        decision = self.controller.decide(state)
+        decision = self.controller.decide(state, landscape=landscape)
         result = self.toolbox.apply(pso, decision.action, decision.params)
         if result.inertia_weight is not None:
             self.w = result.inertia_weight
@@ -460,8 +514,47 @@ class LLM4PSO:
         else:
             self.stagnation_counter = 0
 
-    def _should_intervene(self, state):
-        return state.no_improve_iters >= self.stagnation_threshold
+    def _should_intervene_early(self, state, iteration: int) -> bool:
+        """Multi-condition early detection.
+
+        Triggers intervention before full collapse, not just on iteration count.
+
+        Priority-ordered conditions:
+          1. Emergency: diversity fully collapsed (immediate, no count needed)
+          2. Velocity death: particles frozen but may still be spread
+          3. Soft stall: moderate no-improvement with warning signs
+          4. Safety net: classic stagnation threshold
+        """
+        if iteration < self._min_iter_before_intervention:
+            return False
+
+        div = state.normalized_diversity
+        vz = state.velocity_zero_ratio
+        ni = state.no_improve_iters
+
+        # Condition 1: Emergency diversity collapse
+        if div < 0.005 and vz > 0.7:
+            return True
+
+        # Condition 2: Velocity death (particles frozen)
+        if vz > 0.85:
+            return True
+
+        # Condition 3: Soft stall with warning signs
+        soft_window = self.state_analyzer.stagnation_window * 2
+        if ni >= soft_window and (div < 0.03 or vz > 0.5 or state.velocity_norm_mean < 0.01 * self.state_analyzer.velocity_diameter):
+            return True
+
+        # Condition 4: Classic stagnation safety net
+        if ni >= self.stagnation_threshold:
+            return True
+
+        return False
+
+    def _compute_swarm_bbox(self, pso):
+        """Return (low, high) bounding box of swarm positions for landscape analysis."""
+        pos = np.asarray(pso.position, dtype=float)
+        return np.min(pos, axis=0), np.max(pos, axis=0)
 
     def _function_description(self):
         if hasattr(self.func, "to_str"):

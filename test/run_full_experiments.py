@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-r"""Comprehensive experiment suite for LLM4PSO.
+# run_full_experiments.py
+r"""
+Comprehensive experiment suite for LLM4PSO.
 
 Experiments:
   1. Ablation study: none vs rule vs llm_react vs llm_react_deep
@@ -58,12 +60,12 @@ plt.rcParams.update({
 # ---------------------------------------------------------------------------
 FULL_PARAMS = {
     "pop_size": 30,
-    "max_iter": 1000,
+    "max_iter": 500,
     "w": 0.729,
     "wdamp": 0.99,
     "c1": 1.5,
     "c2": 1.5,
-    "stagnation_threshold": 200,
+    "stagnation_threshold": 100,
     "improvement_tolerance": 1e-8,
 }
 
@@ -634,7 +636,7 @@ Examples:
   python test/run_full_experiments.py --mode all --functions sphere rastrigin --dims 10
         """,
     )
-    parser.add_argument("--mode", default="quick",
+    parser.add_argument("--mode", default="ablation",
                         choices=["quick", "ablation", "comparison", "all"])
     parser.add_argument("--dims", type=int, nargs="+", default=None)
     parser.add_argument("--trials", type=int, default=None)
@@ -645,17 +647,16 @@ Examples:
                         help="LLM4PSO mode for comparison experiment (default: rule)")
     parser.add_argument("--max-iter", type=int, default=None)
     args = parser.parse_args()
-
     # ---- Resolve defaults ----
     if args.dims is None:
-        args.dims = [10, 30]
+        args.dims = [30]
     if args.functions is None:
         if args.mode == "quick":
             args.functions = ["sphere", "rastrigin"]
         else:
             args.functions = list(BENCHMARKS.keys())
     if args.trials is None:
-        args.trials = 2 if args.mode == "quick" else 30
+        args.trials = 1
     if args.max_iter is not None:
         FULL_PARAMS["max_iter"] = args.max_iter
 
@@ -681,17 +682,20 @@ Examples:
         out_dir = args.output or (RESULTS_ROOT / f"comparison_{ts}" if args.mode == "comparison" else RESULTS_ROOT / "comparison")
         if args.mode == "all":
             out_dir = RESULTS_ROOT / "comparison"
-        run_comparison_experiment(args.functions, args.dims, args.trials, out_dir,
-                                  llm_mode=args.llm_mode)
+        # FIXME: comparison experiment temporarily disabled — focus on ablation first
+        # run_comparison_experiment(args.functions, args.dims, args.trials, out_dir,
+        #                           llm_mode=args.llm_mode)
+        print(f"  [SKIP] Comparison experiment disabled. Would save to: {out_dir}")
 
     if args.mode == "quick":
-        # Quick smoke test: 1 trial, 10D, 2 functions to verify pipeline
+        # Quick smoke test: ablation only, 2 functions, 10D, 1 trial
         out_dir = args.output or (RESULTS_ROOT / "quick_smoke_test")
         print("\n--- Ablation smoke test ---")
-        run_ablation_experiment(args.functions, [10], 1, str(Path(out_dir) / "ablation"))
-        print("\n--- Comparison smoke test ---")
-        run_comparison_experiment(args.functions, [10], 1, str(Path(out_dir) / "comparison"),
-                                  llm_mode=args.llm_mode)
+        run_ablation_experiment(args.functions, [30], 1, str(Path(out_dir) / "ablation"))
+        # FIXME: comparison smoke test temporarily disabled
+        # print("\n--- Comparison smoke test ---")
+        # run_comparison_experiment(args.functions, [10], 1, str(Path(out_dir) / "comparison"),
+        #                           llm_mode=args.llm_mode)
 
     print(f"\n{'='*60}")
     print(f"  All experiments complete.")

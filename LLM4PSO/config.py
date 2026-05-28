@@ -17,7 +17,7 @@ class PSOConfig:
 
     # Population
     pop_size: int = 50
-    max_iter: int = 1000
+    max_iter: int = 500
 
     # PSO coefficients
     w: float = 0.729
@@ -30,7 +30,7 @@ class PSOConfig:
     velocity_bounds: Tuple = (-20.0, 20.0)
 
     # Stagnation detection
-    stagnation_threshold: int = 200
+    stagnation_threshold: int = 100
     improvement_tolerance: float = 1e-3
 
     # Intervention

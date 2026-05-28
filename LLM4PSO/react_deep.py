@@ -139,7 +139,7 @@ class DeepReActController(LLMReActController):
         self.landscape_prior = landscape_prior
         self.diagnosis_history: List[DiagnosisRecord] = []
 
-    def _build_initial_messages(self, state, iteration: int) -> List[Dict[str, str]]:
+    def _build_initial_messages(self, state, iteration: int, landscape=None) -> List[Dict[str, str]]:
         state_json = json.dumps(state.to_prompt_dict(), ensure_ascii=True, indent=2)
         tools_json = json.dumps(self.tool_definitions, ensure_ascii=True, indent=2)
 
@@ -160,9 +160,24 @@ class DeepReActController(LLMReActController):
             tools_json=tools_json,
         )
 
+        # Include online landscape profile if available
+        landscape_block = ""
+        if landscape is not None:
+            try:
+                lp_dict = landscape.to_dict() if hasattr(landscape, 'to_dict') else vars(landscape)
+                lp_json = json.dumps(lp_dict, ensure_ascii=True, indent=2)
+                landscape_block = (
+                    f"\n\n## Online Landscape Analysis (current search region)\n"
+                    f"```json\n{lp_json}\n```\n"
+                    f"Landscape label: {landscape.landscape_label}\n"
+                )
+            except Exception:
+                pass
+
         user_message = (
             f"Iteration {iteration}: the swarm state is shown below.\n\n"
-            f"```json\n{state_json}\n```\n\n"
+            f"```json\n{state_json}\n```"
+            f"{landscape_block}\n"
             f"Follow the five-stage reasoning process (Observe → Diagnose → Strategize → Act) "
             f"and return your decision as JSON."
         )
@@ -176,22 +191,28 @@ class DeepReActController(LLMReActController):
         base = super()._format_observation(action_result, gbest_before, gbest_after)
         return (
             base + "\n\nNow REFLECT: Was your diagnosis correct? "
-            "Did the intervention help? Update your understanding and decide the next step. "
-            "Respond with: reflect, revised_diagnose, action, params, done."
+            "Did the intervention produce the expected improvement? "
+            "Update your understanding and decide the next step. "
+            "Respond with JSON: "
+            '{"reflect": "<analysis of what happened>", '
+            '"revised_diagnose": "<updated hypothesis>", '
+            '"action": "<tool_name>", "params": {...}, "done": false_or_true}'
         )
 
     def _parse_response(self, text: str) -> Optional[Dict[str, Any]]:
         parsed = super()._parse_response(text)
         if parsed is None:
             return None
-        # Normalize deep reasoning fields into the standard format
-        if "observe" in parsed or "diagnose" in parsed or "strategize" in parsed:
-            thought_parts = []
-            for field in ["observe", "diagnose", "strategize", "reflect"]:
-                if field in parsed and parsed[field]:
-                    thought_parts.append(f"[{field.upper()}] {parsed[field]}")
-            if thought_parts:
-                parsed.setdefault("thought", " | ".join(thought_parts))
+        # Normalize deep reasoning fields into the standard "thought" field.
+        # Covers both initial turns (observe/diagnose/strategize) and
+        # follow-up turns (reflect/revised_diagnose).
+        deep_fields = ["observe", "diagnose", "strategize", "reflect", "revised_diagnose"]
+        thought_parts = []
+        for field in deep_fields:
+            if field in parsed and parsed[field]:
+                thought_parts.append(f"[{field.upper()}] {parsed[field]}")
+        if thought_parts:
+            parsed["thought"] = " | ".join(thought_parts)
         return parsed
 
     def _create_turn(self, turn_idx, parsed, action_result, gbest_before, gbest_after):
@@ -211,9 +232,9 @@ class DeepReActController(LLMReActController):
         )
         return turn
 
-    def decide_and_act(self, pso, state, iteration, gbest_history, flag: str = "normal"):
+    def decide_and_act(self, pso, state, iteration, gbest_history, flag: str = "normal", landscape=None):
         """Override to use DeepReActTurn for detailed tracking."""
-        messages = self._build_initial_messages(state, iteration)
+        messages = self._build_initial_messages(state, iteration, landscape=landscape)
         result = ReActResult(applied=False)
         gbest_before = float(pso.get_gBest())
 

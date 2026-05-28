@@ -16,7 +16,7 @@ class ControlDecision:
 class RuleBasedReActController:
     """Template ReAct controller for deterministic, explainable interventions."""
 
-    def decide(self, state) -> ControlDecision:
+    def decide(self, state, landscape=None) -> ControlDecision:
         label = state.state_label
 
         if label == "boundary_stagnation":
@@ -28,6 +28,58 @@ class RuleBasedReActController:
                 ),
                 action="opposition_reinit",
                 params={"ratio": 0.25, "velocity_scale": 0.15, "inertia_weight": 0.9},
+            )
+
+        # --- New emergency labels (triggered early, before full collapse) ---
+
+        if label == "diversity_collapse":
+            return ControlDecision(
+                state_label=label,
+                thought=(
+                    "Diversity has catastrophically collapsed with frozen particles. "
+                    "Immediate aggressive reset to restore any exploration capability."
+                ),
+                action="reset_worst_particles",
+                params={"ratio": 0.40, "reset_velocity": True, "inertia_weight": 1.2},
+            )
+
+        if label == "velocity_death":
+            return ControlDecision(
+                state_label=label,
+                thought=(
+                    "Particles are frozen in place but diversity is not yet fully collapsed. "
+                    "Gaussian perturbation can restart local movement before diversity dies."
+                ),
+                action="gaussian_mutation",
+                params={"ratio": 0.30, "scale": 0.06, "target": "worst", "inertia_weight": 1.1},
+            )
+
+        if label == "multimodal_diverse_stall":
+            lp = landscape
+            if lp is not None and lp.estimated_basin_radius > 0:
+                return ControlDecision(
+                    state_label=label,
+                    thought=(
+                        f"Swarm is diverse but stalled — likely a multimodal trap. "
+                        f"Landscape shows basin_radius={lp.estimated_basin_radius:.1f}. "
+                        f"Basin-hopping to explore neighboring basins."
+                    ),
+                    action="basin_hopping",
+                    params={
+                        "ratio": 0.25,
+                        "basin_radius": lp.estimated_basin_radius,
+                        "target": "worst",
+                        "inertia_weight": 1.05,
+                    },
+                )
+            return ControlDecision(
+                state_label=label,
+                thought=(
+                    "Swarm remains diverse but cannot improve — multimodal trap. "
+                    "Levy flight provides heavy-tailed jumps to escape local basins."
+                ),
+                action="levy_flight",
+                params={"ratio": 0.25, "scale": 0.04, "beta": 1.7, "target": "worst", "inertia_weight": 1.0},
             )
 
         if label == "premature_convergence":
@@ -85,47 +137,57 @@ class RuleBasedReActController:
             )
 
         if label == "rugged_plateau_trap":
+            lp = landscape
+            rug = lp.ruggedness if lp is not None else 0.7
             return ControlDecision(
                 state_label=label,
                 thought=(
-                    "The landscape is highly rugged with weak gradients, forming a flat but bumpy plateau. "
-                    "Levy flights can provide the long jumps needed to cross this terrain."
+                    f"The landscape is a rugged plateau (ruggedness={rug:.3f}) with weak gradients. "
+                    "Landscape-adaptive mutation scales perturbations to the terrain roughness."
                 ),
-                action="levy_flight",
-                params={"ratio": 0.30, "scale": 0.05, "beta": 1.8, "target": "worst", "inertia_weight": 1.1},
+                action="landscape_adaptive_mutation",
+                params={"ratio": 0.30, "ruggedness": rug, "target": "worst", "inertia_weight": 1.1},
             )
 
         if label == "deceptive_basin":
+            lp = landscape
+            basin_r = lp.estimated_basin_radius if lp is not None and lp.estimated_basin_radius > 0 else 1.0
             return ControlDecision(
                 state_label=label,
                 thought=(
                     "The local gradient points away from promising regions — the basin is deceptive. "
-                    "Opposition-based reinitialization can flip particles out of this trap."
+                    "Basin-hopping from gBest can jump particles out of the deceptive attractor."
                 ),
-                action="opposition_reinit",
-                params={"ratio": 0.30, "velocity_scale": 0.20, "target": "worst", "inertia_weight": 1.0},
+                action="basin_hopping",
+                params={"ratio": 0.30, "basin_radius": basin_r * 2.0, "target": "worst", "inertia_weight": 1.05},
             )
 
         if label == "deep_valley_chase":
+            lp = landscape
+            step = 0.1
+            if lp is not None and lp.gradient_magnitude_mean > 0:
+                step = min(0.2, max(0.02, lp.gradient_magnitude_mean * 0.5))
             return ControlDecision(
                 state_label=label,
                 thought=(
                     "The swarm is in a smooth valley with reliable gradients. "
-                    "Reduce exploration to accelerate descent toward the basin floor."
+                    "Applying gradient descent steps to accelerate convergence toward the basin floor."
                 ),
-                action="adjust_parameters",
-                params={"inertia_weight": 0.6, "c1": 1.2, "c2": 1.8},
+                action="gradient_descent_step",
+                params={"ratio": 0.15, "step_size": step, "target": "worst", "inertia_weight": 0.6},
             )
 
         if label == "needle_in_haystack":
+            lp = landscape
+            basin_r = lp.estimated_basin_radius if lp is not None and lp.estimated_basin_radius > 0 else 1.0
             return ControlDecision(
                 state_label=label,
                 thought=(
                     "The landscape has very high information content — the optimum is a needle in a haystack. "
-                    "Combining Levy flights with mutation to probe the space more aggressively."
+                    "Landscape-adaptive restart with inverted basin scaling to search aggressively."
                 ),
-                action="levy_flight",
-                params={"ratio": 0.35, "scale": 0.08, "beta": 1.9, "target": "random", "inertia_weight": 1.2},
+                action="landscape_adaptive_restart",
+                params={"ratio": 0.30, "basin_radius": basin_r, "reset_velocity": True, "inertia_weight": 1.1},
             )
 
         if label == "normal_convergence":
